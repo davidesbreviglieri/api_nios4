@@ -1,5 +1,6 @@
 #==========================================================
 #classe di gestione api nios4
+#https://web.nios4.com/ws/doc/
 #==========================================================
 import requests
 from typing import Optional, Dict, Any, List, Union
@@ -8,6 +9,7 @@ from decimal import Decimal
 from pathlib import Path
 import uuid
 import json
+import os
 
 class api_nios4:
     #--------------------------------------------------------
@@ -45,6 +47,11 @@ class api_nios4:
                 #formatvalue = dt.strftime("%Y%m%d%H%M%S")
                 #value = int(formatvalue)            
         return value
+    #--------------------------------------------------------        
+    def normalize_tid(self,value):
+        #converto un tid in una data effettiva
+        dt = datetime.strptime(str(value), "%Y%m%d%H%M%S")
+        return dt.isoformat()
     #--------------------------------------------------------        
     def normalize_date(self,value):
         """
@@ -237,6 +244,37 @@ class api_nios4:
             self.error_message = response.text
             return None     
     #------------------------------------------------------------
+    def fields_info(self,tablename:str,dbname:str="",token:str=""):
+        #dati tabella
+        self.reset_error()
+
+        if dbname != "":
+            self.dbname = dbname        
+        if token != "":
+            self.token = token
+
+        if self.token != "":
+            url = self.base_url + f'?action=table_info&token={self.token}&db={self.dbname}&tablename={tablename}'
+        else:
+            self.errorcode = "E2"
+            self.errormessage = "Token missing"
+            return None
+        
+        response= requests.get(url)
+        if response.status_code == 200:
+            valori= response.json()
+            if valori["error"] == True:
+                self.error_code = valori["error_code"]
+                self.error_message = valori["error_message"]
+                return None
+            else:
+                #estrapolo i dati dell'utente
+                return valori['fields']
+        else:
+            self.error_code = "E2"
+            self.error_message = response.text
+            return None     
+    #------------------------------------------------------------
     def get_record(self,tablename:str,gguid:str,dbname:str="",token:str=""):
         #recupero un record specifico
         self.reset_error()
@@ -266,6 +304,84 @@ class api_nios4:
             self.error_message = response.text
             return None
     #------------------------------------------------------------
+    def detail_delete(self,tablename:str,gguid:str,dbname:str ="",token:str=""):
+        #eseguo l'eliminazione profonda del rapportino
+        self.reset_error()
+
+        if dbname != "":
+            self.dbname = dbname
+        if token != "":
+            self.token = token
+
+        if gguid == "":
+            return None
+
+        payload = {}
+        payload['tablename'] = tablename
+        payload['gguid'] = gguid
+
+        url = ""
+        if self.token != "":
+            url = self.base_url + f'?action=detail_delete&token={self.token}&db={self.dbname}&tablename={tablename}'
+        else:
+            self.error_code = "E2"
+            self.error_message = "Token missing"
+            return None
+        response= requests.post(url, json=payload)
+        if response.status_code == 200:
+            valori= response.json()
+            if valori["error"] == True:
+                self.error_code = valori["error_code"]
+                self.error_message = valori["error_message"]
+                #print(self.errormessage)
+                return None
+            else:
+                #estrapolo i dati dell'utente
+                return valori
+        else:
+            self.error_code = "E2"
+            self.error_message = response.text
+            #print(self.errormessage)
+            return None   
+    #------------------------------------------------------------
+    def detail_resolve(self,tablename:str,gguid:str,dbname:str ="",token:str=""):
+        #eseguo una forzatura di ricalcolo complata su un dettaglio
+        self.reset_error()
+
+        if dbname != "":
+            self.dbname = dbname
+        if token != "":
+            self.token = token
+
+        payload = {}
+        payload['tablename'] = tablename
+        payload['gguid'] = gguid
+
+        url = ""
+        if self.token != "":
+            url = self.base_url + f'?action=detail_resolve&token={self.token}&db={self.dbname}&tablename={tablename}'
+        else:
+            self.error_code = "E2"
+            self.error_message = "Token missing"
+            return None
+        response= requests.post(url, json=payload)
+        if response.status_code == 200:
+            valori= response.json()
+            if valori["error"] == True:
+                self.error_code = valori["error_code"]
+                self.error_message = valori["error_message"]
+                #print(self.errormessage)
+                return None
+            else:
+                #estrapolo i dati dell'utente
+                return valori
+        else:
+            self.error_code = "E2"
+            self.error_message = response.text
+            #print(self.errormessage)
+            return None   
+
+    #------------------------------------------------------------
     def fuzzy_records(self,tablename:str,fields_search: List[str],fields_return: List[str],query:str,dbname:str ="",token:str="",threshold:Decimal=0.5):
         #eseguo una ricerca semantica su un valore
         self.reset_error()
@@ -285,7 +401,7 @@ class api_nios4:
 
         url = ""
         if self.token != "":
-            url = 'https://web.nios4.com/ws/' + f'?action=model_fuzzy&token={self.token}&db={self.dbname}&tablename={tablename}'
+            url = self.base_url + f'?action=model_fuzzy&token={self.token}&db={self.dbname}&tablename={tablename}'
         else:
             self.error_code = "E2"
             self.error_message = "Token missing"
@@ -319,8 +435,8 @@ class api_nios4:
         '''
         payload = {
             "search": {
-                "fields": ["stato_documento"],
-                "query": "Aperto2"
+                "fields": ["state_document"],
+                "query": "Open"
             }
         }
         '''
@@ -333,7 +449,7 @@ class api_nios4:
         #print(payload)
         url = ""
         if self.token != "":
-            url = 'https://web.nios4.com/ws/' + f'?action=model&token={self.token}&db={self.dbname}&tablename={tablename}'
+            url = self.base_url + f'?action=model&token={self.token}&db={self.dbname}&tablename={tablename}'
         else:
             self.error_code = "E2"
             self.error_message = "Token missing"
@@ -355,9 +471,8 @@ class api_nios4:
             self.error_message = response.text
             #print(self.errormessage)
             return None        
-
     #------------------------------------------------------------
-    def save_record(self,tablename: str,values: Dict[str, Any],dbname: str ="",token:str=""):
+    def save_record(self,tablename: str,values: Dict[str, Any],dbname: str ="",token:str="",is_new:bool=True,delete:bool=False):
         #procedo a salvare un record
         self.reset_error()
 
@@ -372,7 +487,45 @@ class api_nios4:
             return None
         #creo il payload
         payload = {
-            "rows": [values]
+            "is_new": is_new,
+            "values": values,
+            "delete": delete,
+        }
+        #procedo a inviare il record
+        url = ""
+        if self.token != "":
+            url = self.base_url + f'?action=detail_save&token={self.token}&db={self.dbname}&tablename={tablename}'
+        else:
+            self.error_code = "E2"
+            self.error_message = "Token missing"
+            return None
+        response= requests.post(url, json=payload)
+        if response.status_code == 200:
+            valori= response.json()
+            if valori["error"] == True:
+                self.error_code = valori["error_code"]
+                self.error_message = valori["error_message"]
+                return None
+            else:
+                #estrapolo i dati dell'utente
+                return valori
+    #------------------------------------------------------------
+    def save_records(self,tablename: str,values: List[Dict[str, Any]],dbname: str ="",token:str=""):
+        #procedo a salvare un record
+        self.reset_error()
+
+        if dbname != "":
+            self.dbname = dbname
+        if token != "":
+            self.token = token
+        #se i valori["gguid"] è vuoto non salvo il record
+        if values["gguid"] == "" or values["gguid"] == None:
+            self.error_code = "E1" 
+            self.error_message = "Non è definito il gguid del record"
+            return None
+        #creo il payload
+        payload = {
+            "rows": values
         }
         #procedo a inviare il record
         url = ""
@@ -395,14 +548,48 @@ class api_nios4:
     #------------------------------------------------------------
     def create_data_file(self,filename:str,gguidrif:str="") -> tuple[str, str]:
         #creo la stringa per salvare correttamente i dati di un file
+        #normalizzo il nome del file se per caso contiene il percorso
+        onlyfilename = os.path.basename(filename)
         if gguidrif == "":
             gguidrif = str(uuid.uuid4())
         d1 = {
             "gguidfile": gguidrif,
-            "nomefile": filename
+            "nomefile": onlyfilename
         }        
         body = json.dumps(d1)
         return gguidrif,body
+    #------------------------------------------------------------
+    def download_file(self,path:str,gguidrif:str,tablename:str, dbname: str ="",token:str="") -> bool:
+        #recupero un file dal server
+        self.reset_error()
+        if dbname != "":
+            self.dbname = dbname
+        if token != "":
+            self.token = token        
+
+        url = ""
+        if self.token != "":
+            url = f'https://app.pocketsell.com/_sync/?action=file_download&token={self.token}&db={self.dbname}&tablename={tablename}&gguid={gguidrif}'
+        else:
+            self.error_code = "E2"
+            self.error_message = "Token missing"
+            return False
+        print(url)
+        try:
+            response = requests.get(url, stream=True)
+            with open(path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:  # ignora keep-alive chunks
+                        f.write(chunk)
+        except requests.RequestException as e:
+            self.error_code = "F1"
+            self.error_message = str(e)
+            print(f"HTTP error: {e}")
+        except ValueError:
+            # JSON non valido
+            print(f"Response non-JSON: {response.text[:500]}")
+        return True        
+
     #------------------------------------------------------------
     def upload_file(self,path:str,is_image:bool,gguidrif:str,tablename:str, dbname: str ="",token:str="") -> bool:
         #invio un file al server
@@ -420,7 +607,7 @@ class api_nios4:
 
         url = ""
         if self.token != "":
-            url = f'https://app.pocketsell.com/_sync/?action=file_upload&?action=file_upload&token={self.token}&db={self.dbname}&tablename={tablename}&gguid={gguidrif}&type={type}'
+            url = f'https://app.pocketsell.com/_sync/?action=file_upload&token={self.token}&db={self.dbname}&tablename={tablename}&gguid={gguidrif}&type={type}'
         else:
             self.error_code = "E2"
             self.error_message = "Token missing"
@@ -440,7 +627,7 @@ class api_nios4:
         except ValueError:
             # JSON non valido
             print(f"Response non-JSON: {resp.text[:500]}")
-        return False
+        return True
         
     #------------------------------------------------------------
     def sync(self,dbname: str ="",token:str=""):
