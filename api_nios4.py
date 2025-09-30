@@ -15,6 +15,8 @@
 #================================================================================
 #API NIOS4
 #================================================================================
+from __future__ import annotations
+
 import requests
 from typing import Optional, Dict, Any, List, Union
 from datetime import datetime,timezone,date
@@ -1254,7 +1256,7 @@ class api_nios4:
         
         if values["gguid"] == "" or values["gguid"] == None:
             self.error_code = "E1" 
-            self.error_message = "Non è definito il gguid del record"
+            self.error_message = "The record's gguid is not defined"
             return None
         
         payload = {
@@ -1349,7 +1351,7 @@ class api_nios4:
         #se i valori["gguid"] è vuoto non salvo il record
         if values["gguid"] == "" or values["gguid"] == None:
             self.error_code = "E1" 
-            self.error_message = "Non è definito il gguid del record"
+            self.error_message = "The record's gguid is not defined"
             return None
         payload = {
             "rows": values
