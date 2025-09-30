@@ -2,7 +2,7 @@
 
 Una piccola libreria Python (singolo file) per interagire con il backend **Nios4** tramite le *Web API* ufficiali. Fornisce funzioni di autenticazione, lettura/scrittura record, ricerche testuali e fuzzy, gestione file (upload/download) e sincronizzazione.
 
-> **Documentazione ufficiale API Nios4**: https://developer.nios4.com/web-api
+> **Documentazione ufficiale API Nios4**: https://en.nios4.dev/wep-api
 
 ---
 
