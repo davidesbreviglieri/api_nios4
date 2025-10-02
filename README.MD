@@ -4,6 +4,9 @@ A small, single‑file Python library to interact with the **Nios4** backend thr
 
 > **Official Nios4 Web API docs**: https://en.nios4.dev/wep-api
 
+> Important note
+The APIs manage data directly in the database of the web version of the system. To send data to the synchronizer so that additions and changes are delivered to all devices, you need to call the "sync" API.
+
 ## Table of contents
 - [Background](#background)
 - [Features](#features)
