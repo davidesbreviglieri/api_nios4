@@ -4,6 +4,9 @@ Una piccola libreria Python (singolo file) per interagire con il backend **Nios4
 
 > **Documentazione ufficiale API Nios4**: https://en.nios4.dev/wep-api
 
+> Nota importante
+Le Api gestiscono i dati direttamente nel database della versioen web del sistema. Per inviare i dati al sincronizzatore in modo che le aggiunte e le modifiche arrivino su tutti i dispositivi occorre richiamare l'api "sync"
+
 ---
 
 ## Indice
